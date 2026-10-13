@@ -137,15 +137,16 @@
 
 <div id="log"></div>
 <div id="prompts-bar">
+  <button type="button" class="prompt-chip" onclick="sendPrompt('Show me all the exercises listed in the catalog categorized by muscle group')">📋 List All Exercises</button>
+  <button type="button" class="prompt-chip" onclick="sendPrompt('How to perform bicep curls with dumbbells? Please provide correct form, movement execution, body posture, and how many reps to do.')">💪 Dumbbell Bicep Curls Form</button>
   <button type="button" class="prompt-chip" onclick="sendPrompt('I need a budget-friendly diet plan. My budget is ₹150/day and I am a pure vegetarian looking to bulk and build muscle.')">🍱 ₹150/Day Veg Bulk Diet</button>
   <button type="button" class="prompt-chip" onclick="sendPrompt('What is a high-protein budget diet plan for ₹250/day for body recomposition with eggs and chicken?')">🍗 ₹250/Day Non-Veg Cut</button>
   <button type="button" class="prompt-chip" onclick="sendPrompt('Calculate plate loading for 140 kg on a 20kg Olympic barbell')">🏋️‍♂️ Plate Math: 140 KG</button>
   <button type="button" class="prompt-chip" onclick="sendPrompt('Calculate my lifter rank and strength stats: Bodyweight 72kg, Deadlift 160kg, Squat 120kg, Bench 90kg')">⚡ My Lifter Rank & Badges</button>
   <button type="button" class="prompt-chip" onclick="sendPrompt('Calculate my 1RM for 100 kg x 5 reps on Bench Press')">📊 1RM: 100kg x 5 Bench</button>
-  <button type="button" class="prompt-chip" onclick="sendPrompt('Log today\'s workout: Deadlift 3 sets of 5 reps at 140 kg with good form')">📝 Log: Deadlift 3x5 @ 140kg</button>
 </div>
 <form id="form">
-  <input id="input" placeholder="Ask LiftMetrics (e.g. diet budget, 1RM, plate math, lifter rank, log workout)…" autocomplete="off" autofocus>
+  <input id="input" placeholder="Ask LiftMetrics (e.g. how to perform bicep curls, list all exercises, diet plan, plate math, 1RM)…" autocomplete="off" autofocus>
   <button class="send-btn">Send</button>
 </form>
 

@@ -17,9 +17,10 @@ Based strictly on the codebase in `app/` and configuration in `agents-cli-manife
   - `workout_sessions`: Historical session logs with sets, reps, weight (lbs), total volume load, and notes.
   - `personal_records`: All-time PR records per lift with timestamps and previous bests.
 - **Wired Function Tools**:
-  - `search_exercises(query, muscle_group, limit)`: Full-text and muscle-group search across the exercise database.
-  - `get_exercise_details(exercise_name)`: Retrieves detailed cues, setup instructions, and equipment specifications.
-  - `add_exercise(name, muscle_group, equipment, difficulty, instructions, cues)`: Adds custom movements to the database.
+  - `list_all_exercises(category)`: Lists all 18 curated movements categorized by muscle group (**Arms**, **Chest**, **Back**, **Shoulders**, **Legs**, **Core**) with equipment, difficulty, and rep targets.
+  - `search_exercises(query, category)`: Fuzzy and multi-token keyword search across exercise names, aliases, target muscles, and equipment.
+  - `get_exercise_details(exercise_name)`: Returns complete biomechanical execution guides, body posture/alignment, concentric/eccentric movement phases, set/rep targets (Hypertrophy 8-12 reps, Strength 6-8 reps, Endurance 12-15 reps), form cues, and common mistakes to avoid (e.g. for **Dumbbell Bicep Curls**, Barbell Squat, RDL, Bench Press).
+  - `add_exercise(name, category, primary_muscle, equipment, difficulty, default_sets_reps, form_cues)`: Adds custom movements to the database.
   - `get_personal_records(exercise_name)`: Fetches current PR leaderboard and milestones.
   - `record_personal_record(exercise_name, weight_lbs, reps, notes)`: Stores explicit personal records.
   - `log_workout_session(exercise_name, sets, reps, weight_lbs, notes)`: Atomically computes total volume load, logs the workout session, checks against current PRs, and updates `personal_records` when a new record is achieved.
@@ -110,6 +111,7 @@ liftmetrics/
 │   ├── media_service.py       # Gemini 3.1 image generation and Omni video generation
 │   ├── external_service.py    # Open Food Facts and WGER external API clients
 │   ├── a2ui_utils.py          # A2UI response formatting callback and schema helpers
+│   ├── seed_exercises.py      # Comprehensive 18-exercise database seed script (posture, execution, reps)
 │   └── seed_firestore.py      # Firestore database seeding script
 ├── frontend/
 │   ├── Dockerfile             # Container definition for Cloud Run deployment
@@ -118,13 +120,13 @@ liftmetrics/
 │   └── static/
 │       └── index.html         # Web chat UI, plate modal, unit switcher, confetti/fanfare, timer, and A2UI renderer
 ├── tests/
-│   ├── unit/                  # Unit test suite (18 tests for diet, workout math, media, charts)
+│   ├── unit/                  # Unit test suite (20 tests for diet, workout math, exercise catalog, media, charts)
 │   │   ├── test_diet_service.py # Tests for budget diet plans, USD conversion, and protein cost rankings
-│   │   ├── test_liftmetrics.py  # Tests for 1RM, plate math, RPG ranks, charts, and science manual
+│   │   ├── test_liftmetrics.py  # Tests for 1RM, plate math, RPG ranks, exercise catalog, bicep curl form & reps
 │   │   ├── test_media_service.py# Tests for Gemini image generation and Cloud Storage upload
 │   │   └── test_external_service.py # Tests for Open Food Facts & WGER APIs
 │   └── eval/                  # Agent evaluation suite (datasets, LLM judge, eval configs)
-│       ├── datasets/          # 7 domain-specific eval cases (1RM, logging, form guides, volume, budget diet, plate math, RPG rank)
+│       ├── datasets/          # 8 domain-specific eval cases (1RM, logging, form guides, volume, budget diet, plate math, RPG rank, bicep curls)
 │       ├── eval_config.yaml   # Configured metrics (MULTI_TURN_TASK_SUCCESS, turn count)
 │       └── response_quality.py # In-process judge metric evaluator
 ├── training_science_guide.txt # Evidence-based strength and hypertrophy science knowledge base

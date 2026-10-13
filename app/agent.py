@@ -37,6 +37,7 @@ from app.a2ui_utils import a2ui_callback
 from app.diet_service import generate_budget_diet_plan
 from app.external_service import fetch_nutrition_facts, lookup_external_muscle_info
 from app.media_service import generate_exercise_form_image, generate_exercise_motion_video
+from app.seed_exercises import EXERCISE_CATALOG
 from app.workout_service import (
     calculate_lifter_rank_and_stats,
     calculate_one_rep_max,
@@ -71,26 +72,94 @@ def _slugify(text: str) -> str:
     return re.sub(r"[-\s]+", "-", clean)
 
 
+def list_all_exercises(category: str = "") -> Dict[str, Any]:
+    """List all exercises in the LiftMetrics database, grouped by muscle group / category.
+
+    Args:
+        category: Optional filter by category (e.g. 'Arms', 'Chest', 'Back', 'Shoulders', 'Legs', 'Core').
+
+    Returns:
+        A dictionary with categories containing lists of exercises, total count, and guidance.
+    """
+    db = get_db()
+    items = []
+    try:
+        docs = db.collection("exercises").stream()
+        for doc in docs:
+            d = doc.to_dict()
+            d["id"] = doc.id
+            items.append(d)
+    except Exception as e:
+        logger.warning(f"Error fetching exercises from Firestore: {e}")
+
+    # Fallback to local catalog if Firestore returned nothing
+    if not items:
+        items = list(EXERCISE_CATALOG)
+
+    cat_filter = category.strip().lower()
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
+
+    for item in items:
+        item_cat = str(item.get("category", "Other")).strip()
+        if cat_filter and cat_filter not in item_cat.lower():
+            continue
+        if item_cat not in grouped:
+            grouped[item_cat] = []
+        grouped[item_cat].append({
+            "name": item.get("name"),
+            "category": item_cat,
+            "primary_muscle": item.get("primary_muscle"),
+            "equipment": item.get("equipment"),
+            "difficulty": item.get("difficulty", "Intermediate"),
+            "default_sets_reps": item.get("default_sets_reps", "3 sets of 8-12 reps"),
+            "form_cues": item.get("form_cues", ""),
+        })
+
+    total_count = sum(len(ex_list) for ex_list in grouped.values())
+    return {
+        "status": "success",
+        "total_exercises": total_count,
+        "categories": grouped,
+        "note": "Call `get_exercise_details` with any exercise name for step-by-step body posture, movement biomechanics, rep ranges, and common mistakes.",
+    }
+
+
 def search_exercises(query: str = "", category: str = "") -> List[Dict[str, Any]]:
     """Search or list exercises in the catalog stored in Firestore.
 
     Args:
-        query: Optional keyword to search within exercise name, primary muscle, or equipment.
-        category: Optional category filter (e.g. 'Chest', 'Legs', 'Back', 'Shoulders', 'Arms').
+        query: Optional keyword to search within exercise name, primary muscle, equipment, or aliases.
+        category: Optional category filter (e.g. 'Chest', 'Legs', 'Back', 'Shoulders', 'Arms', 'Core').
 
     Returns:
         A list of matching exercise dictionaries from Firestore.
     """
     db = get_db()
-    docs = db.collection("exercises").stream()
+    items = []
+    try:
+        docs = db.collection("exercises").stream()
+        for doc in docs:
+            d = doc.to_dict()
+            d["id"] = doc.id
+            items.append(d)
+    except Exception as e:
+        logger.warning(f"Error searching exercises from Firestore: {e}")
+
+    if not items:
+        items = list(EXERCISE_CATALOG)
+
     results = []
     q_lower = query.strip().lower()
     cat_lower = category.strip().lower()
 
-    for doc in docs:
-        data = doc.to_dict()
-        data["id"] = doc.id
+    stop_words = {"how", "to", "perform", "with", "the", "a", "an", "do", "execute", "proper", "form", "correct", "for"}
+    query_tokens = set(
+        re.sub(r"[^\w]", "", w.lower().rstrip("s"))
+        for w in q_lower.split()
+        if w.lower() not in stop_words and len(w) > 2
+    )
 
+    for data in items:
         # Category filter
         doc_category = str(data.get("category", "")).lower()
         if cat_lower and cat_lower not in doc_category:
@@ -101,42 +170,107 @@ def search_exercises(query: str = "", category: str = "") -> List[Dict[str, Any]
             name = str(data.get("name", "")).lower()
             muscle = str(data.get("primary_muscle", "")).lower()
             equip = str(data.get("equipment", "")).lower()
-            if q_lower not in name and q_lower not in muscle and q_lower not in equip:
+            aliases = [str(a).lower() for a in data.get("aliases", [])]
+            alias_str = " ".join(aliases)
+
+            # Direct substring match
+            if q_lower in name or q_lower in muscle or q_lower in equip or q_lower in alias_str:
+                results.append(data)
                 continue
 
-        results.append(data)
+            # Token overlap check
+            item_text = f"{name} {muscle} {equip} {alias_str}"
+            item_tokens = set(
+                re.sub(r"[^\w]", "", w.lower().rstrip("s"))
+                for w in item_text.split()
+                if len(w) > 2
+            )
+            if query_tokens and len(query_tokens & item_tokens) >= 1:
+                results.append(data)
+                continue
+        else:
+            results.append(data)
 
     return results
 
 
 def get_exercise_details(exercise_name: str) -> Dict[str, Any]:
-    """Get full details and form cues for a specific exercise from Firestore.
+    """Get full biomechanical details, body posture, movement execution, and rep targets for an exercise.
 
     Args:
-        exercise_name: Name or identifier of the exercise (e.g. 'Barbell Bench Press', 'pull-ups').
+        exercise_name: Name or search query for the exercise (e.g. 'bicep curls with dumbells', 'Dumbbell Bicep Curl', 'Barbell Bench Press').
 
     Returns:
-        The exercise record with form cues and specifications, or an error dictionary if not found.
+        The exercise record with body posture, movement execution phases, rep targets, and form cues.
     """
     db = get_db()
     slug_id = _slugify(exercise_name)
 
-    # 1. Direct document lookup by slug
-    doc = db.collection("exercises").document(slug_id).get()
-    if doc.exists:
-        data = doc.to_dict()
-        data["id"] = doc.id
-        return data
+    all_items = []
+    try:
+        docs = db.collection("exercises").stream()
+        for doc in docs:
+            d = doc.to_dict()
+            d["id"] = doc.id
+            all_items.append(d)
+    except Exception as e:
+        logger.warning(f"Error fetching exercises: {e}")
 
-    # 2. Case-insensitive search by name
+    if not all_items:
+        all_items = list(EXERCISE_CATALOG)
+
     target = exercise_name.strip().lower()
-    for item in db.collection("exercises").stream():
-        data = item.to_dict()
-        if target in str(data.get("name", "")).lower():
-            data["id"] = item.id
-            return data
 
-    return {"error": f"Exercise '{exercise_name}' not found in the catalog."}
+    # 1. Direct ID or slug lookup
+    for item in all_items:
+        if item.get("id") == slug_id or item.get("id") == target:
+            return item
+
+    # 2. Exact name or exact alias match
+    for item in all_items:
+        if str(item.get("name", "")).lower() == target:
+            return item
+        aliases = [str(a).lower() for a in item.get("aliases", [])]
+        if target in aliases:
+            return item
+
+    # 3. Substring containment in name or aliases
+    for item in all_items:
+        name_lower = str(item.get("name", "")).lower()
+        if target in name_lower or name_lower in target:
+            return item
+        for a in item.get("aliases", []):
+            a_lower = str(a).lower()
+            if target in a_lower or a_lower in target:
+                return item
+
+    # 4. Token overlap ranking (handles queries like 'how to perform bicep curls with dumbells')
+    stop_words = {"how", "to", "perform", "with", "the", "a", "an", "do", "execute", "proper", "form", "correct", "for"}
+    query_tokens = set(
+        re.sub(r"[^\w]", "", w.lower().rstrip("s"))
+        for w in exercise_name.split()
+        if w.lower() not in stop_words and len(w) > 2
+    )
+
+    best_match = None
+    best_score = 0
+    for item in all_items:
+        alias_str = " ".join(item.get("aliases", []))
+        item_text = item.get("name", "") + " " + alias_str + " " + item.get("equipment", "")
+        item_tokens = set(
+            re.sub(r"[^\w]", "", w.lower().rstrip("s"))
+            for w in item_text.split()
+            if len(w) > 2
+        )
+        score = len(query_tokens & item_tokens)
+        if score > best_score:
+            best_score = score
+            best_match = item
+
+    if best_match and best_score >= 1:
+        return best_match
+
+    return {"error": f"Exercise '{exercise_name}' not found in the catalog. Call `list_all_exercises` to view all available exercises."}
 
 
 def add_exercise(
@@ -343,7 +477,23 @@ root_agent = Agent(
         "LIFTER RPG GAMIFICATION & CELEBRATION PROTOCOL:\n"
         "- When a lifter inquires about their strength level, rank, or badges, invoke `calculate_lifter_rank_and_stats` to compute their level (Iron Novice -> Bronze -> Silver -> Gold -> Platinum -> Diamond -> Desi Baahubali / Iron God).\n"
         "- Cheer on lifters with high-energy gym enthusiasm ('Shabash! Dangal mode on!').\n\n"
+        "EXERCISE CATALOG & MOVEMENT DIRECTORY PROTOCOL:\n"
+        "- When a user asks to see or list exercises (e.g. 'list all exercises', 'show exercises', 'what exercises do you have', 'movement catalog'):\n"
+        "  Invoke `list_all_exercises` to return the complete library grouped into Arms, Chest, Back, Shoulders, Legs, and Core with primary muscles and equipment.\n\n"
+        "EXERCISE EXECUTION & BIOMECHANICAL FORM COACHING PROTOCOL:\n"
+        "- When a user asks how to perform any exercise (such as 'how to perform bicep curls with dumbells' or 'dumbbell bicep curl'):\n"
+        "  Always invoke `get_exercise_details` and provide a comprehensive, structured coaching breakdown covering:\n"
+        "  1. Target Muscles: Primary muscle (e.g., Biceps Brachii - short & long heads) and secondary muscles (Brachialis, Brachioradialis, Forearms).\n"
+        "  2. Body Posture & Setup: Feet shoulder-width apart, knees unlocked, tall chest, scapulae retracted & depressed (shoulders down and back), core/glutes braced to eliminate sway, elbows pinned against ribs.\n"
+        "  3. Movement Execution: Step-by-step guide with concentric curl with active wrist supination (turning palms toward the ceiling), 1-second peak squeeze at apex, and strict 2-3 second eccentric lowering to full elbow lockout/stretch.\n"
+        "  4. Sets & Repetitions Guidance: Rep ranges for Hypertrophy (3-4 sets of 8-12 reps, RIR 1-2), Strength/Mass (4 sets of 6-8 reps), and Muscular Endurance (3 sets of 12-15 reps).\n"
+        "  5. Critical Form Cues & Mistakes to Avoid: Zero torso swinging/hip heave, no elbow flare or forward drift, full range of motion (no half reps), neutral wrists.\n"
+        "  6. Visual Cue: Offer or invoke `generate_exercise_form_image` to generate a visual form guide diagram.\n\n"
         "ALL AVAILABLE TOOLS:\n"
+        "- `list_all_exercises`: List all exercises in the catalog grouped by muscle group (Arms, Chest, Back, Shoulders, Legs, Core).\n"
+        "- `get_exercise_details`: Fetch technical execution cues, body posture, biomechanics, and set/rep targets for any movement.\n"
+        "- `search_exercises`: Search and recommend exercises from the Firestore catalog.\n"
+        "- `add_exercise`: Add new exercises to the Firestore catalog.\n"
         "- `calculate_one_rep_max`: Accurately compute estimated 1RM and working percentages in both KG and LBS.\n"
         "- `calculate_plate_breakdown`: Compute exact sleeve plate loading on a 20kg bar (or 45lb bar) with ASCII diagram.\n"
         "- `calculate_lifter_rank_and_stats`: Compute RPG lifter level, XP, DOTS ratio, and achievement badges.\n"
@@ -353,9 +503,6 @@ root_agent = Agent(
         "- `consult_training_science`: Consult evidence-based exercise science guidelines (hypertrophy volume, rest intervals, RPE/RIR).\n"
         "- `generate_exercise_form_image`: Generate visual form guide diagrams saved to public Cloud Storage.\n"
         "- `generate_exercise_motion_video`: Generate coaching video clips using Google's Omni model saved to Cloud Storage and session artifacts.\n"
-        "- `search_exercises`: Search and recommend exercises from the Firestore catalog.\n"
-        "- `get_exercise_details`: Fetch technical execution cues and specifications.\n"
-        "- `add_exercise`: Add new exercises to the Firestore catalog.\n"
         "- `get_personal_records`: View user personal records.\n"
         "- `record_personal_record`: Explicitly store PRs.\n"
         "- `fetch_nutrition_facts`: Fetch live macronutrient data from Open Food Facts.\n"
@@ -375,6 +522,7 @@ root_agent = Agent(
         consult_training_science,
         generate_exercise_form_image,
         generate_exercise_motion_video,
+        list_all_exercises,
         search_exercises,
         get_exercise_details,
         add_exercise,

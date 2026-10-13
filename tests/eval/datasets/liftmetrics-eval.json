@@ -146,6 +146,27 @@
           ]
         }
       }
+    },
+    {
+      "eval_case_id": "dumbbell_bicep_curls_form_and_reps",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "How to perform bicep curls with dumbells? Provide the correct form, movement execution, body posture, and how many reps to do."
+          }
+        ]
+      },
+      "reference": {
+        "response": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "To perform dumbbell bicep curls with proper form: (1) Body Posture: Stand tall with feet shoulder-width apart, knees soft, chest high, shoulders packed back and down, core braced, and elbows pinned against your ribcage. (2) Movement Execution: Curl weights upward while actively supinating wrists (turning palms toward the ceiling) without swinging torso or using hip momentum. Squeeze biceps for 1 second at the top, then lower under control over 2-3 seconds to a full bottom stretch. (3) Reps & Sets: For hypertrophy and muscle growth, perform 3-4 sets of 8-12 reps; for endurance, perform 3 sets of 12-15 reps."
+            }
+          ]
+        }
+      }
     }
   ]
 }

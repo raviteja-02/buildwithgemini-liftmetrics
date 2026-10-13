@@ -62,3 +62,35 @@ def test_calculate_one_rep_max_metric_defaults():
     assert res["estimated_1rm_kg"] > 100.0
     assert res["estimated_1rm_lbs"] > 220.0
     assert "90%" in res["training_percentages_kg"]
+
+def test_list_all_exercises():
+    from app.agent import list_all_exercises
+    res = list_all_exercises()
+    assert res["status"] == "success"
+    assert res["total_exercises"] >= 15
+    assert "Arms" in res["categories"]
+    assert "Chest" in res["categories"]
+    assert "Back" in res["categories"]
+    assert "Legs" in res["categories"]
+
+def test_bicep_curls_form_movement_posture_and_reps():
+    from app.agent import get_exercise_details, search_exercises
+    # Direct match on the user's exact phrasing
+    res = get_exercise_details("how to perform bicep curls with dumbells")
+    assert "error" not in res
+    assert res["name"] == "Dumbbell Bicep Curl"
+    assert "Biceps Brachii" in res["primary_muscle"]
+    assert "body_posture" in res
+    assert "feet shoulder-width" in res["body_posture"].lower()
+    assert "movement_execution" in res
+    assert "concentric" in res["movement_execution"].lower()
+    assert "supinating wrists" in res["movement_execution"].lower()
+    assert "recommended_reps" in res
+    assert "8-12 reps" in res["recommended_reps"]
+    assert "common_mistakes" in res
+
+    # Verify search also finds it
+    search_res = search_exercises("bicep curls with dumbells")
+    assert len(search_res) >= 1
+    assert any("Bicep Curl" in x.get("name", "") for x in search_res)
+
