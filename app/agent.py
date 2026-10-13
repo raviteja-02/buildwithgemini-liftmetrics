@@ -14,8 +14,12 @@
 # limitations under the License.
 
 import datetime
+import logging
+import os
 import re
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 
 from google.adk.agents import Agent
 from google.adk.agents.callback_context import CallbackContext
@@ -32,7 +36,11 @@ from a2ui.schema.manager import A2uiSchemaManager
 from app.a2ui_utils import a2ui_callback
 from app.external_service import fetch_nutrition_facts, lookup_external_muscle_info
 from app.media_service import generate_exercise_form_image, generate_exercise_motion_video
-from app.workout_service import calculate_one_rep_max, log_workout_session
+from app.workout_service import (
+    calculate_one_rep_max,
+    generate_progress_chart,
+    log_workout_session,
+)
 
 MODEL = "gemini-3.8-flash"
 
@@ -270,6 +278,45 @@ a2ui_instruction = schema_manager.generate_system_prompt(
     include_examples=True,
 )
 
+def consult_training_science(query: str) -> str:
+    """Consult evidence-based sports science guidelines for hypertrophy, volume landmarks, rest intervals, and fatigue management.
+
+    Args:
+        query: Specific exercise science question (e.g. 'optimal rest between heavy sets', 'hypertrophy volume landmarks', 'RPE vs RIR guidance').
+
+    Returns:
+        Evidence-based sports science guidelines and recommendations.
+    """
+    try:
+        corpus_file = os.path.join(os.path.dirname(__file__), "..", "scripts", "corpus_resource.txt")
+        if os.path.exists(corpus_file):
+            with open(corpus_file, "r") as f:
+                corpus_name = f.read().strip()
+            if corpus_name:
+                import vertexai
+                from vertexai.preview import rag
+
+                vertexai.init(project=PROJECT_ID, location="us-central1")
+                resp = rag.retrieval_query(
+                    rag_resources=[rag.RagResource(rag_corpus=corpus_name)],
+                    text=query,
+                    similarity_top_k=3,
+                )
+                contexts = [ctx.text for ctx in resp.contexts.contexts if ctx.text]
+                if contexts:
+                    return "Scientific Knowledge Retrieval:\n" + "\n\n---\n\n".join(contexts)
+    except Exception as e:
+        logger.warning(f"RAG retrieval query error: {e}")
+
+    # Grounded fallback: read from verified sports science reference guide
+    guide_path = os.path.join(os.path.dirname(__file__), "..", "training_science_guide.txt")
+    if os.path.exists(guide_path):
+        with open(guide_path, "r") as f:
+            content = f.read()
+        return f"Evidence-Based Sports Science Guidelines:\n{content[:2500]}"
+    return "Sports Science Reference: Optimal hypertrophy volume is 10-20 sets/muscle/week with 2-3 mins rest for compounds and 1-2 mins for isolations."
+
+
 root_agent = Agent(
     name="root_agent",
     model=Gemini(
@@ -278,12 +325,14 @@ root_agent = Agent(
     ),
     instruction=(
         "You are LiftMetrics, an expert fitness coach and personal record (PR) specialist.\n"
-        "You have tools connected to a Firestore database, math calculator, external fitness APIs, and image generator:\n"
+        "You have tools connected to a Firestore database, math calculator, external fitness APIs, chart generator, and image generator:\n"
         "- `search_exercises`: Search and recommend exercises from the Firestore catalog.\n"
         "- `get_exercise_details`: Fetch technical execution cues and specifications.\n"
         "- `add_exercise`: Add new exercises to the Firestore catalog.\n"
         "- `calculate_one_rep_max`: Accurately compute estimated 1-Rep Max and working percentage targets (Epley/Brzycki).\n"
         "- `log_workout_session`: Log workouts with sets, reps, and weight; calculates total volume load; automatically checks and updates PRs.\n"
+        "- `generate_progress_chart`: Plot visual dark-mode strength and volume progression graphs uploaded to Cloud Storage.\n"
+        "- `consult_training_science`: Consult evidence-based exercise science guidelines (hypertrophy volume, rest intervals, RPE/RIR, deloading).\n"
         "- `generate_exercise_form_image`: Generate visual form guide diagrams saved to public Cloud Storage.\n"
         "- `generate_exercise_motion_video`: Generate short exercise motion coaching video clips using Google's Omni model (gemini-omni-flash-preview) saved to public Cloud Storage and session artifacts.\n"
         "- `get_personal_records`: View user personal records.\n"
@@ -301,6 +350,8 @@ root_agent = Agent(
         add_exercise,
         calculate_one_rep_max,
         log_workout_session,
+        generate_progress_chart,
+        consult_training_science,
         generate_exercise_form_image,
         generate_exercise_motion_video,
         get_personal_records,

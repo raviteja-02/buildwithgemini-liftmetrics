@@ -1,5 +1,6 @@
 metrics_to_run:
-  - custom_response_quality
+  - MULTI_TURN_TASK_SUCCESS
+  - agent_turn_count
 
 custom_metrics:
   # Default: local LLM-as-judge (see response_quality.py). Runs in-process via

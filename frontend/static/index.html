@@ -42,23 +42,49 @@
   .a2divider { border:none; border-top:1px solid var(--border); margin:.4rem 0; width:100%; }
   .a2img { max-width:100%; border-radius:8px; display:block; }
   .material-symbols-outlined { font-family:'Material Symbols Outlined'; font-size:1.25rem; line-height:1; vertical-align:middle; color:var(--accent); }
+  .timer-btn { background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); border-radius:5px; color:#fff; font-size:0.75rem; padding:0.25rem 0.5rem; cursor:pointer; font-weight:600; transition:background .15s ease; }
+  .timer-btn:hover { background:rgba(255,255,255,0.35); }
+  .timer-btn.active { background:#fff; color:var(--accent); border-color:#fff; }
 </style>
 </head>
 <body>
 <header>
-  <div style="max-width:780px; margin:0 auto; display:flex; justify-content:space-between; align-items:center;">
-    <span>🏋️ LiftMetrics</span>
-    <span style="font-size:0.85rem; font-weight:normal; opacity:0.95;">AI Workout & PR Coach</span>
+  <div style="max-width:860px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem;">
+    <div style="display:flex; align-items:center; gap:0.6rem;">
+      <span style="font-size:1.4rem;">🏋️</span>
+      <div>
+        <div style="font-weight:700; font-size:1.05rem;">LiftMetrics</div>
+        <div style="font-size:0.75rem; opacity:0.9;">AI Workout & PR Coach</div>
+      </div>
+    </div>
+
+    <!-- Rest Interval Timer Widget -->
+    <div id="rest-timer-widget" style="display:flex; align-items:center; gap:0.4rem; background:rgba(0,0,0,0.22); padding:0.3rem 0.65rem; border-radius:18px; font-family:ui-monospace,monospace;">
+      <span style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; opacity:0.9;">⏱️ Rest:</span>
+      <span id="timer-display" style="font-weight:bold; font-size:1.05rem; min-width:48px; text-align:center;">00:00</span>
+      <button type="button" class="timer-btn" onclick="setTimer(60)">60s</button>
+      <button type="button" class="timer-btn" onclick="setTimer(90)">90s</button>
+      <button type="button" class="timer-btn" onclick="setTimer(180)">3m</button>
+      <button type="button" class="timer-btn" onclick="toggleTimer()" id="timer-toggle-btn">Start</button>
+      <button type="button" class="timer-btn" onclick="resetTimer()">Reset</button>
+    </div>
+
+    <!-- Export Session Log Button -->
+    <button type="button" onclick="exportWorkoutLog()" style="background:#fff; color:var(--accent); border:none; border-radius:6px; padding:0.35rem 0.75rem; font-size:0.82rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:0.3rem; box-shadow:0 1px 2px rgba(0,0,0,.1);">
+      📥 Export Log
+    </button>
   </div>
 </header>
 <div id="log"></div>
 <div id="prompts-bar">
   <button type="button" class="prompt-chip" onclick="sendPrompt('Calculate my 1RM for 225 lbs x 5 reps on Bench Press')">📊 1RM: 225x5 Bench</button>
+  <button type="button" class="prompt-chip" onclick="sendPrompt('Plot my Deadlift strength and volume progression chart')">📈 Plot Deadlift Progress</button>
   <button type="button" class="prompt-chip" onclick="sendPrompt('Log today\'s workout: Squats 3 sets of 5 at 315 lbs')">📝 Log: Squats 3x5 @ 315</button>
   <button type="button" class="prompt-chip" onclick="sendPrompt('Show proper Romanian Deadlift form with bar path and cues')">📸 Form Guide: RDL</button>
+  <button type="button" class="prompt-chip" onclick="sendPrompt('What does sports science recommend for rest intervals on heavy compound lifts?')">🔬 Science: Rest Times</button>
 </div>
 <form id="form">
-  <input id="input" placeholder="Ask LiftMetrics (e.g. 1RM calc, log workout, form cues, nutrition)…" autocomplete="off" autofocus>
+  <input id="input" placeholder="Ask LiftMetrics (e.g. 1RM calc, plot progress, log workout, form cues, science)…" autocomplete="off" autofocus>
   <button class="send-btn">Send</button>
 </form>
 
@@ -222,6 +248,97 @@ form.addEventListener("submit", async (ev) => {
     b.textContent = "Error: " + e.message;
   }
 });
+
+/* --- Rest Interval Timer & Session Export Logic --- */
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
+
+function updateTimerDisplay() {
+  const m = String(Math.floor(timerSeconds / 60)).padStart(2, "0");
+  const s = String(timerSeconds % 60).padStart(2, "0");
+  document.getElementById("timer-display").textContent = `${m}:${s}`;
+}
+
+function setTimer(secs) {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = secs;
+  updateTimerDisplay();
+  startTimer();
+}
+
+function startTimer() {
+  if (timerRunning) return;
+  if (timerSeconds <= 0) timerSeconds = 90;
+  timerRunning = true;
+  document.getElementById("timer-toggle-btn").textContent = "Pause";
+  timerInterval = setInterval(() => {
+    if (timerSeconds > 0) {
+      timerSeconds--;
+      updateTimerDisplay();
+      if (timerSeconds === 0) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById("timer-toggle-btn").textContent = "Start";
+        playBeep();
+      }
+    }
+  }, 1000);
+}
+
+function toggleTimer() {
+  if (timerRunning) {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    document.getElementById("timer-toggle-btn").textContent = "Resume";
+  } else {
+    startTimer();
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = 0;
+  updateTimerDisplay();
+  document.getElementById("timer-toggle-btn").textContent = "Start";
+}
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.35);
+  } catch (e) {}
+}
+
+function exportWorkoutLog() {
+  const messages = document.querySelectorAll("#log .msg");
+  if (!messages.length) {
+    alert("No workout conversations or logged sessions to export yet.");
+    return;
+  }
+  let md = "# 🏋️ LiftMetrics Session & Workout Export\n\nGenerated on: " + new Date().toLocaleString() + "\n\n---\n\n";
+  messages.forEach(m => {
+    const isUser = m.classList.contains("user");
+    const role = isUser ? "**Athlete**" : "**LiftMetrics Coach**";
+    const text = m.innerText.trim();
+    md += `### ${role}\n${text}\n\n`;
+  });
+
+  const blob = new Blob([md], { type: "text/markdown" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `liftmetrics_session_${new Date().toISOString().slice(0, 10)}.md`;
+  a.click();
+}
 </script>
 </body>
 </html>

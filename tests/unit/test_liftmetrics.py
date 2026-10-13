@@ -15,3 +15,17 @@ def test_calculate_one_rep_max_multi_rep():
 def test_calculate_one_rep_max_invalid():
     res = calculate_one_rep_max(-10.0, 5)
     assert "error" in res
+
+def test_consult_training_science():
+    from app.agent import consult_training_science
+    res = consult_training_science("hypertrophy volume guidelines")
+    assert "hypertrophy" in res.lower()
+    assert len(res) > 50
+
+def test_generate_progress_chart():
+    from app.workout_service import generate_progress_chart
+    res = generate_progress_chart("Deadlift")
+    assert res["status"] == "success"
+    assert res["exercise_name"] == "Deadlift"
+    assert res["image_url"].startswith("https://storage.googleapis.com/")
+

@@ -14,8 +14,9 @@ dependencies = [
     "aiohttp>=3.13.4",
     "google-cloud-logging>=3.12.0,<4.0.0",
     "google-cloud-aiplatform[agent-engines,evaluation]>=1.156.0",
-    "protobuf>=6.31.1,<7.0.0",
     "google-cloud-firestore>=2.19.0",
+    "google-cloud-storage>=2.14.0",
+    "matplotlib>=3.8.0",
 ]
 requires-python = ">=3.11,<3.14"
 

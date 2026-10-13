@@ -37,22 +37,39 @@ Based strictly on the codebase in `app/` and configuration in `agents-cli-manife
   - **Model**: `gemini-omni-flash-preview` in `global` region via the Vertex AI Interactions API.
   - **Tool**: `generate_exercise_motion_video(exercise_name, focus_cue)` renders a short coaching video clip demonstrating movement cadence, bar path, and joint angles, saves the MP4 into ADK session artifacts, and uploads to Cloud Storage.
 
-### 4. 🃏 Rich A2UI Interface
+### 4. 📈 Visual Progression Charts & Volume Analytics
+- **Tool**: `generate_progress_chart(exercise_name, metric)`
+- Dynamically renders high-resolution dark-themed progression charts combining:
+  - Dual-axis visualizations: estimated 1RM progression lines and volume load bar distributions over historical workout logs.
+  - Generates PNG charts with Matplotlib, saves to ADK session artifacts, and uploads to public Google Cloud Storage (`gs://liftmetrics-media-fde3effbf431/charts/`).
+
+### 5. 🔬 Evidence-Based Sports Science Knowledge Grounding
+- **Tool**: `consult_training_science(query)`
+- Grounds workout recommendations, fatigue management, and periodization into peer-reviewed sports science:
+  - Hypertrophy volume landmarks: Maintenance Volume (MV), Minimum Effective Volume (MEV), Maximum Adaptive Volume (MAV), and Maximum Recoverable Volume (MRV).
+  - Scientific rest interval guidelines: 2–3+ minutes for heavy compound lifts (Squat, Bench, Deadlift) and 60–90 seconds for metabolic isolation movements.
+  - Proactive RPE (Rate of Perceived Exertion) and RIR (Reps in Reserve) intensity scaling.
+
+### 6. 🃏 Rich A2UI Interface & Web Frontend
 - Configured with A2UI v0.8 Basic Catalog schema manager (`a2ui.basic_catalog.provider.BasicCatalog`, `a2ui.schema.manager.A2uiSchemaManager`) and `after_model_callback=a2ui_callback`.
 - Converts agent responses into interactive visual components:
   - **Cards & Badges**: Cleanly formatted training plans and exercise summaries.
   - **Rows & Columns**: Structured percentage tables and set/rep workout splits.
   - **Images**: Embedded visual diagrams directly rendered inside cards.
+- **Interactive Web Features**:
+  - **In-Header Rest Interval Timer**: Web Audio API countdown timer with 60s, 90s, and 3-minute presets, pause/resume, and audio beep alerts.
+  - **Quick Prompt Chips**: Instant 1RM calculation, Deadlift progression plotting, Squats session logging, RDL form guides, and hypertrophy volume consultations.
+  - **Workout Log Exporter**: One-click download of the complete training session history as a Markdown file.
 
-### 5. 🧠 Cross-Session Long-Term Memory (Memory Bank)
+### 7. 🧠 Cross-Session Long-Term Memory (Memory Bank)
 - Configured with `PreloadMemoryTool()` in `root_agent.tools` and `after_agent_callback=generate_memories_callback`.
 - Connects to Vertex AI Agent Engine Memory Bank to retain user preferences, injury history, and training goals across separate user sessions.
 
-### 6. 🐍 Sandboxed Code Execution
+### 8. 🐍 Sandboxed Code Execution
 - Integrated `AgentEngineSandboxCodeExecutor` backed by Vertex AI Agent Engine.
 - Safely executes Python code in an isolated cloud sandbox for complex volume equations, progression periodization, or custom analytics.
 
-### 7. 🌐 External Nutrition & Anatomy APIs
+### 9. 🌐 External Nutrition & Anatomy APIs
 - **Wired Function Tools**:
   - `fetch_nutrition_facts(food_query)`: Queries the Open Food Facts API (with USDA reference fallback) to fetch calories, protein, carbohydrates, and fats per 100g.
   - `lookup_external_muscle_info(muscle_name)`: Queries the WGER Workout Manager REST API for scientific anatomical muscle details and primary/secondary target groups.
@@ -73,18 +90,24 @@ The following features from the initial concept brief are planned for future rel
 liftmetrics/
 ├── app/
 │   ├── agent.py               # Root ADK agent, system instructions, and tool bindings
-│   ├── workout_service.py     # 1RM math calculations and Firestore logging logic
+│   ├── workout_service.py     # 1RM math calculations, Firestore logging, and Matplotlib charts
 │   ├── media_service.py       # Gemini 3.1 image generation and Omni video generation
 │   ├── external_service.py    # Open Food Facts and WGER external API clients
 │   ├── a2ui_utils.py          # A2UI response formatting callback and schema helpers
 │   └── seed_firestore.py      # Firestore database seeding script
 ├── frontend/
+│   ├── Dockerfile             # Container definition for Cloud Run deployment
 │   ├── main.py                # FastAPI proxy communicating over the A2A protocol
 │   ├── requirements.txt       # Frontend dependencies (a2a-sdk, fastapi, uvicorn)
 │   └── static/
-│       └── index.html         # Web chat interface with A2UI card renderer
+│       └── index.html         # Web chat UI, rest interval audio timer, session exporter, and A2UI renderer
 ├── tests/
-│   └── unit/                  # Unit test suite for workout math and media services
+│   ├── unit/                  # Unit test suite for workout math, media, and chart services
+│   └── eval/                  # Agent evaluation suite (datasets, LLM judge, eval configs)
+│       ├── datasets/          # Domain-specific eval cases (1RM, logging, form guides, volume)
+│       ├── eval_config.yaml   # Configured metrics (MULTI_TURN_TASK_SUCCESS, turn count)
+│       └── response_quality.py # In-process judge metric evaluator
+├── training_science_guide.txt # Evidence-based strength and hypertrophy science knowledge base
 ├── liftmetrics_demo.gif       # Optimized looping screen recording of the agent in action
 ├── liftmetrics_demo.webm      # Full WebM demo recording
 ├── pyproject.toml             # Python package configuration and dependencies
@@ -114,6 +137,9 @@ agents-cli run "Log a workout session: Deadlift 3 sets of 5 reps at 405 lbs"
 
 # Request a visual form guide
 agents-cli run "Show me proper form for Romanian Deadlift with a visual guide"
+
+# Generate a visual progression chart
+agents-cli run "Plot my progress chart for Deadlift"
 ```
 
 ### 2. Launch the Local Development Playground
@@ -133,11 +159,30 @@ uv pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8080
 ```
 
+### 4. Deploy Frontend to Google Cloud Run
+Deploy the frontend container directly to Google Cloud Run using Cloud Build:
+```bash
+gcloud run deploy liftmetrics-frontend \
+  --source frontend \
+  --region us-east1 \
+  --allow-unauthenticated \
+  --set-env-vars AGENT_ENGINE_RESOURCE_NAME="projects/282829779330/locations/us-east1/reasoningEngines/4494360431162294272",AGENT_DIRECTORY="app"
+```
+
 ---
 
-## 🧪 Running Automated Unit Tests
+## 🧪 Running Automated Unit Tests & Evaluation Suite
 
-Run the test suite using pytest:
+### 1. Automated Unit Tests
+Run the pytest test suite:
 ```bash
 uv run pytest tests/unit
 ```
+
+### 2. Agent Evaluation Suite (`agents-cli eval`)
+Run the evaluation benchmark across domain-specific test cases (1RM calculations, workout logging, form guides, and training science):
+```bash
+agents-cli eval run --dataset tests/eval/datasets/liftmetrics-eval.json --config tests/eval/eval_config.yaml
+```
+Traces and detailed scoring reports will be saved to `artifacts/traces/` and `artifacts/grade_results/`.
+

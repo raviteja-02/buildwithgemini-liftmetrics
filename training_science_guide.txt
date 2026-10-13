@@ -1,0 +1,35 @@
+# EVIDENCE-BASED STRENGTH & HYPERTROPHY TRAINING SCIENCE MANUAL
+
+## SECTION 1: HYPERTROPHY VOLUME LANDMARKS & SET PROGRESSION
+- Maintenance Volume (MV): The minimum volume required to preserve existing muscular mass. For most trained lifters, this is 6-8 direct working sets per muscle group per week.
+- Minimum Effective Volume (MEV): The smallest dose of training volume that induces measurable hypertrophy gains. Typically 10-12 direct sets per muscle group per week.
+- Maximum Adaptive Volume (MAV): The optimal volume range where the greatest rate of muscular hypertrophy occurs. Typically 14-22 direct sets per muscle group per week, split across 2-4 training sessions.
+- Maximum Recoverable Volume (MRV): The upper limit of training volume from which an athlete can recover and adapt. Exceeding MRV (typically >22-26 sets per week depending on systemic fatigue) results in overreaching and eventual strength loss.
+
+## SECTION 2: INTER-SET REST INTERVALS
+- Compound Multi-Joint Lifts (Squat, Deadlift, Bench Press, Overhead Press): 
+  - Rest requirement: 2 to 5 minutes.
+  - Scientific justification: Heavy compound movements place high demands on the central nervous system (CNS) and phosphocreatine (ATP-CP) replenishment. Studies (e.g., Schoenfeld et al.) demonstrate that resting >=3 minutes produces greater strength gains and superior total volume compared to short (1-minute) rest periods.
+- Isolation & Accessory Lifts (Bicep Curls, Lateral Raises, Tricep Pushdowns, Leg Extensions):
+  - Rest requirement: 60 to 90 seconds.
+  - Scientific justification: Lower systemic fatigue allows faster metabolic recovery while maintaining adequate mechanical tension on target muscle fibers.
+
+## SECTION 3: PROXIMITY TO FAILURE & RPE / RIR FRAMEWORK
+- RPE (Rating of Perceived Exertion) and RIR (Reps in Reserve):
+  - RPE 10 (0 RIR): Complete muscular failure; no additional repetitions could be completed with acceptable form.
+  - RPE 9 (1 RIR): 1 repetition left before failure. Excellent for peak strength stimuli and final sets of compound work.
+  - RPE 8 (2 RIR): 2 repetitions left before failure. The golden standard for hypertrophy training (balance of high mechanical tension and manageable fatigue).
+  - RPE 7 (3 RIR): 3 repetitions left before failure. Ideal for sub-maximal technical volume or power/speed work.
+- Recommendation: The majority of working sets should be performed within 1-3 RIR (RPE 7-9) to stimulate muscle protein synthesis without inducing disproportionate neuromuscular fatigue.
+
+## SECTION 4: DELOAD PROTOCOLS & FATIGUE MANAGEMENT
+- When to Deload: Every 4 to 8 weeks, or when systemic fatigue indicators appear (stagnant lift progression, elevated resting heart rate, sleep disruption, persistent joint soreness).
+- Standard Deload Structure:
+  - Volume reduction: Reduce total working sets by 40-50% (e.g., 2 sets instead of 4).
+  - Intensity maintenance: Keep working intensity at 70-80% of normal load to maintain neuromuscular adaptations while flushing systemic fatigue.
+  - Duration: 5 to 7 days before starting the next progressive overload mesocycle.
+
+## SECTION 5: NUTRITION & PROTEIN TIMING FOR RECOVERY
+- Daily Protein Intake: 1.6 to 2.2 grams per kilogram of body weight (0.7 to 1.0 grams per pound) distributed across 3-5 meals.
+- Pre/Post Workout Carbohydrates: 0.5-1.0 g/kg carbohydrates consumed within 1-2 hours around training sessions to optimize glycogen replenishment and muscular work capacity.
+- Hydration: 3.0 to 4.0 liters of water daily, with sodium/electrolyte supplementation during high-volume sessions.

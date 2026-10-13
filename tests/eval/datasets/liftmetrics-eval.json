@@ -1,0 +1,88 @@
+{
+  "eval_cases": [
+    {
+      "eval_case_id": "1rm_bench_calculation",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "Calculate my 1-Rep Max if I benched 225 lbs for 5 reps, and give me my 90% and 80% working weight recommendations."
+          }
+        ]
+      },
+      "reference": {
+        "response": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "Based on 225 lbs for 5 reps, the estimated 1RM is approximately 260-262 lbs (Epley formula: 225 * (1 + 5/30) = 262.5 lbs). 90% is ~235 lbs and 80% is ~210 lbs."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "eval_case_id": "workout_logging_deadlift",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "Log my deadlift workout today: 3 sets of 5 reps at 315 lbs with good form."
+          }
+        ]
+      },
+      "reference": {
+        "response": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "Successfully logged Deadlift: 3 sets x 5 reps @ 315 lbs for a total volume load of 4,725 lbs."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "eval_case_id": "exercise_form_rdl",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "How do I perform a Romanian Deadlift correctly? Focus on hip hinge cues."
+          }
+        ]
+      },
+      "reference": {
+        "response": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "To perform a Romanian Deadlift (RDL): Maintain a soft knee bend, initiate by pushing your hips straight back in a hinge motion, keep the barbell close to your shins, keep your spine neutral, and drive through the hips to return to standing."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "eval_case_id": "training_science_volume",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "What does exercise science recommend as the optimal weekly set volume per muscle group for hypertrophy?"
+          }
+        ]
+      },
+      "reference": {
+        "response": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "Evidence-based guidelines indicate that optimal hypertrophy volume is generally 10 to 20 hard sets per muscle group per week (Optimal Volume, MEV to MRV), with 2 to 3 minutes of rest between compound sets."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
