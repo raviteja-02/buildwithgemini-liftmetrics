@@ -42,26 +42,43 @@
   .a2divider { border:none; border-top:1px solid var(--border); margin:.4rem 0; width:100%; }
   .a2img { max-width:100%; border-radius:8px; display:block; }
   .material-symbols-outlined { font-family:'Material Symbols Outlined'; font-size:1.25rem; line-height:1; vertical-align:middle; color:var(--accent); }
-  .timer-btn { background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); border-radius:5px; color:#fff; font-size:0.75rem; padding:0.25rem 0.5rem; cursor:pointer; font-weight:600; transition:background .15s ease; }
+  .timer-btn { background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); border-radius:5px; color:#fff; font-size:0.75rem; padding:0.25rem 0.5rem; cursor:pointer; font-weight:600; transition:all .15s ease; }
   .timer-btn:hover { background:rgba(255,255,255,0.35); }
   .timer-btn.active { background:#fff; color:var(--accent); border-color:#fff; }
+
+  /* Plate Calculator Modal Styles */
+  #plate-modal { display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.65); align-items:center; justify-content:center; backdrop-filter:blur(3px); }
+  .modal-content { background:#1e293b; color:#f8fafc; padding:1.5rem; border-radius:12px; width:90%; max-width:440px; box-shadow:0 10px 25px rgba(0,0,0,0.5); border:1px solid #334155; }
+  .modal-input { width:100%; background:#0f172a; border:1px solid #475569; color:#f8fafc; padding:0.6rem 0.8rem; border-radius:6px; font-size:1rem; margin-top:0.4rem; box-sizing:border-box; }
+  .modal-btn { background:var(--accent); color:#fff; border:none; border-radius:6px; padding:0.55rem 1rem; font-weight:bold; cursor:pointer; margin-top:0.8rem; width:100%; transition:opacity .15s; }
+  .modal-btn:hover { opacity:0.9; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 <header>
-  <div style="max-width:860px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem;">
+  <div style="max-width:920px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.6rem;">
     <div style="display:flex; align-items:center; gap:0.6rem;">
       <span style="font-size:1.4rem;">🏋️</span>
       <div>
-        <div style="font-weight:700; font-size:1.05rem;">LiftMetrics</div>
+        <div style="font-weight:700; font-size:1.05rem; display:flex; align-items:center; gap:0.4rem;">
+          LiftMetrics <span style="font-size:0.65rem; background:rgba(255,255,255,0.25); padding:2px 6px; border-radius:10px;">🇮🇳 Indian & Global</span>
+        </div>
         <div style="font-size:0.75rem; opacity:0.9;">AI Workout & PR Coach</div>
       </div>
     </div>
 
+    <!-- Lifter RPG Rank & Streak Badge -->
+    <div style="display:flex; align-items:center; gap:0.4rem; background:rgba(0,0,0,0.28); padding:0.25rem 0.65rem; border-radius:14px; font-size:0.78rem; font-weight:600;">
+      <span>🔥 14-Day Streak</span>
+      <span style="opacity:0.4;">|</span>
+      <span title="Level 6 Titan — Dangal Mode!">👑 Diamond Lifter</span>
+    </div>
+
     <!-- Rest Interval Timer Widget -->
-    <div id="rest-timer-widget" style="display:flex; align-items:center; gap:0.4rem; background:rgba(0,0,0,0.22); padding:0.3rem 0.65rem; border-radius:18px; font-family:ui-monospace,monospace;">
-      <span style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; opacity:0.9;">⏱️ Rest:</span>
-      <span id="timer-display" style="font-weight:bold; font-size:1.05rem; min-width:48px; text-align:center;">00:00</span>
+    <div id="rest-timer-widget" style="display:flex; align-items:center; gap:0.35rem; background:rgba(0,0,0,0.22); padding:0.25rem 0.55rem; border-radius:18px; font-family:ui-monospace,monospace;">
+      <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; opacity:0.9;">⏱️ Rest:</span>
+      <span id="timer-display" style="font-weight:bold; font-size:0.95rem; min-width:44px; text-align:center;">00:00</span>
       <button type="button" class="timer-btn" onclick="setTimer(60)">60s</button>
       <button type="button" class="timer-btn" onclick="setTimer(90)">90s</button>
       <button type="button" class="timer-btn" onclick="setTimer(180)">3m</button>
@@ -69,22 +86,66 @@
       <button type="button" class="timer-btn" onclick="resetTimer()">Reset</button>
     </div>
 
-    <!-- Export Session Log Button -->
-    <button type="button" onclick="exportWorkoutLog()" style="background:#fff; color:var(--accent); border:none; border-radius:6px; padding:0.35rem 0.75rem; font-size:0.82rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:0.3rem; box-shadow:0 1px 2px rgba(0,0,0,.1);">
-      📥 Export Log
-    </button>
+    <div style="display:flex; align-items:center; gap:0.4rem;">
+      <!-- Plate Calculator Modal Trigger -->
+      <button type="button" class="timer-btn" onclick="openPlateModal()" style="padding:0.35rem 0.6rem; font-size:0.8rem; display:flex; align-items:center; gap:0.25rem;">
+        🔢 Plates
+      </button>
+
+      <!-- Unit Toggle Button -->
+      <button type="button" id="unit-toggle-btn" class="timer-btn" onclick="toggleUnit()" style="padding:0.35rem 0.6rem; font-size:0.8rem; font-weight:700;">
+        🇮🇳 KG
+      </button>
+
+      <!-- Export Session Log Button -->
+      <button type="button" onclick="exportWorkoutLog()" style="background:#fff; color:var(--accent); border:none; border-radius:6px; padding:0.35rem 0.65rem; font-size:0.8rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:0.25rem; box-shadow:0 1px 2px rgba(0,0,0,.1);">
+        📥 Export
+      </button>
+    </div>
   </div>
 </header>
+
+<!-- Plate Calculator Pop-up Modal -->
+<div id="plate-modal">
+  <div class="modal-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+      <h3 style="margin:0; font-size:1.15rem; display:flex; align-items:center; gap:0.3rem;">🏋️ Barbell Plate Calculator</h3>
+      <button type="button" onclick="closePlateModal()" style="background:none; border:none; color:#94a3b8; font-size:1.3rem; cursor:pointer;">&times;</button>
+    </div>
+    <div style="font-size:0.85rem; color:#94a3b8; margin-bottom:0.5rem;">Quickly calculate exact plate loading per sleeve for a standard 20kg (or 45lb) bar:</div>
+    <label style="font-size:0.85rem; font-weight:600;">Target Weight (<span id="modal-unit-label">KG</span>):</label>
+    <input type="number" id="plate-target-input" class="modal-input" placeholder="e.g. 100, 140, 225" value="100">
+    
+    <label style="font-size:0.85rem; font-weight:600; margin-top:0.6rem; display:block;">Bar Weight:</label>
+    <select id="plate-bar-select" class="modal-input" style="padding:0.5rem;">
+      <option value="20">20 kg Standard Olympic Bar</option>
+      <option value="15">15 kg Women's Olympic Bar</option>
+      <option value="10">10 kg Local Straight Rod</option>
+      <option value="45">45 lbs Standard Olympic Bar</option>
+    </select>
+
+    <div id="plate-modal-result" style="margin-top:0.8rem; padding:0.6rem; background:#0f172a; border-radius:6px; font-family:monospace; font-size:0.85rem; min-height:48px; border:1px solid #334155;">
+      Sleeve: [20kg] [20kg] (40kg per side + 20kg bar = 100kg)
+    </div>
+
+    <button type="button" class="modal-btn" onclick="calculateModalPlates()">Calculate Sleeve Plates</button>
+    <button type="button" style="background:none; border:1px solid #475569; color:#cbd5e1; border-radius:6px; padding:0.45rem; width:100%; margin-top:0.4rem; cursor:pointer; font-size:0.85rem;" onclick="askCoachPlates()">
+      Ask LiftMetrics Coach in Chat &rarr;
+    </button>
+  </div>
+</div>
+
 <div id="log"></div>
 <div id="prompts-bar">
-  <button type="button" class="prompt-chip" onclick="sendPrompt('Calculate my 1RM for 225 lbs x 5 reps on Bench Press')">📊 1RM: 225x5 Bench</button>
-  <button type="button" class="prompt-chip" onclick="sendPrompt('Plot my Deadlift strength and volume progression chart')">📈 Plot Deadlift Progress</button>
-  <button type="button" class="prompt-chip" onclick="sendPrompt('Log today\'s workout: Squats 3 sets of 5 at 315 lbs')">📝 Log: Squats 3x5 @ 315</button>
-  <button type="button" class="prompt-chip" onclick="sendPrompt('Show proper Romanian Deadlift form with bar path and cues')">📸 Form Guide: RDL</button>
-  <button type="button" class="prompt-chip" onclick="sendPrompt('What does sports science recommend for rest intervals on heavy compound lifts?')">🔬 Science: Rest Times</button>
+  <button type="button" class="prompt-chip" onclick="sendPrompt('I need a budget-friendly diet plan. My budget is ₹150/day and I am a pure vegetarian looking to bulk and build muscle.')">🍱 ₹150/Day Veg Bulk Diet</button>
+  <button type="button" class="prompt-chip" onclick="sendPrompt('What is a high-protein budget diet plan for ₹250/day for body recomposition with eggs and chicken?')">🍗 ₹250/Day Non-Veg Cut</button>
+  <button type="button" class="prompt-chip" onclick="sendPrompt('Calculate plate loading for 140 kg on a 20kg Olympic barbell')">🏋️‍♂️ Plate Math: 140 KG</button>
+  <button type="button" class="prompt-chip" onclick="sendPrompt('Calculate my lifter rank and strength stats: Bodyweight 72kg, Deadlift 160kg, Squat 120kg, Bench 90kg')">⚡ My Lifter Rank & Badges</button>
+  <button type="button" class="prompt-chip" onclick="sendPrompt('Calculate my 1RM for 100 kg x 5 reps on Bench Press')">📊 1RM: 100kg x 5 Bench</button>
+  <button type="button" class="prompt-chip" onclick="sendPrompt('Log today\'s workout: Deadlift 3 sets of 5 reps at 140 kg with good form')">📝 Log: Deadlift 3x5 @ 140kg</button>
 </div>
 <form id="form">
-  <input id="input" placeholder="Ask LiftMetrics (e.g. 1RM calc, plot progress, log workout, form cues, science)…" autocomplete="off" autofocus>
+  <input id="input" placeholder="Ask LiftMetrics (e.g. diet budget, 1RM, plate math, lifter rank, log workout)…" autocomplete="off" autofocus>
   <button class="send-btn">Send</button>
 </form>
 
@@ -224,6 +285,118 @@ function renderReply(b, parts) {
   }
   if (!b.childNodes.length) b.textContent = "(no response)";
   log.scrollTop = log.scrollHeight;
+
+  // Gamification: Trigger celebratory Confetti and Audio Fanfare on PR or Baahubali milestone
+  const lower = textStr.toLowerCase();
+  if (lower.includes("new personal record") || lower.includes("first pr set") || lower.includes("shabash") || lower.includes("baahubali")) {
+    triggerCelebration();
+  }
+}
+
+function triggerCelebration() {
+  try {
+    if (typeof confetti === "function") {
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#38bdf8', '#10b981', '#f59e0b', '#ec4899', '#ffffff']
+      });
+    }
+    playFanfare();
+  } catch (e) {}
+}
+
+function playFanfare() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 arpeggio
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.12);
+      gain.gain.setValueAtTime(0.18, ctx.currentTime + idx * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.12 + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + idx * 0.12);
+      osc.stop(ctx.currentTime + idx * 0.12 + 0.36);
+    });
+  } catch (e) {}
+}
+
+// Unit Toggle State (Default: KG)
+let currentUnit = "KG";
+function toggleUnit() {
+  currentUnit = (currentUnit === "KG") ? "LBS" : "KG";
+  document.getElementById("unit-toggle-btn").textContent = (currentUnit === "KG") ? "🇮🇳 KG" : "🇺🇸 LBS";
+  document.getElementById("modal-unit-label").textContent = currentUnit;
+  const barSelect = document.getElementById("plate-bar-select");
+  if (currentUnit === "LBS") {
+    barSelect.value = "45";
+    document.getElementById("plate-target-input").value = "225";
+  } else {
+    barSelect.value = "20";
+    document.getElementById("plate-target-input").value = "100";
+  }
+  calculateModalPlates();
+}
+
+// Plate Calculator Modal Controls
+function openPlateModal() {
+  document.getElementById("plate-modal").style.display = "flex";
+  calculateModalPlates();
+}
+
+function closePlateModal() {
+  document.getElementById("plate-modal").style.display = "none";
+}
+
+window.onclick = function(event) {
+  const modal = document.getElementById("plate-modal");
+  if (event.target === modal) closePlateModal();
+};
+
+function calculateModalPlates() {
+  const target = parseFloat(document.getElementById("plate-target-input").value) || 0;
+  const bar = parseFloat(document.getElementById("plate-bar-select").value) || 20;
+  const resDiv = document.getElementById("plate-modal-result");
+
+  if (target < bar) {
+    resDiv.textContent = `Target (${target}) is lighter than bar (${bar}). Lift empty bar!`;
+    return;
+  }
+  if (target === bar) {
+    resDiv.textContent = `Empty bar! No plates needed for ${bar} ${currentUnit}.`;
+    return;
+  }
+
+  const perSide = (target - bar) / 2.0;
+  const plates = (currentUnit === "KG")
+    ? [25, 20, 15, 10, 5, 2.5, 1.25]
+    : [45, 35, 25, 10, 5, 2.5];
+
+  let remaining = perSide;
+  const used = [];
+  for (const p of plates) {
+    const c = Math.floor(remaining / p);
+    if (c > 0) {
+      for (let i = 0; i < c; i++) used.push(`${p}${currentUnit.toLowerCase()}`);
+      remaining -= c * p;
+    }
+  }
+
+  const sleeveStr = used.map(p => `[${p}]`).join(" ");
+  resDiv.innerHTML = `<strong>Sleeve Load:</strong> ${sleeveStr || '(none)'}<br>` +
+    `<strong>Per Side:</strong> ${perSide} ${currentUnit} | <strong>Bar:</strong> ${bar} ${currentUnit} | <strong>Total:</strong> ${target} ${currentUnit}`;
+}
+
+function askCoachPlates() {
+  const target = document.getElementById("plate-target-input").value;
+  const bar = document.getElementById("plate-bar-select").value;
+  closePlateModal();
+  sendPrompt(`Calculate plate loading for ${target} ${currentUnit.toLowerCase()} on a ${bar} ${currentUnit.toLowerCase()} barbell`);
 }
 
 // The proxy returns { parts: [{kind:"text",text} | {kind:"a2ui",data}] }.
@@ -236,9 +409,6 @@ form.addEventListener("submit", async (ev) => {
   const b = bubble("agent"); b.textContent = "…";
   try {
     const res = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) });
-    // Read as text first, then parse. If the proxy ever returns a non-JSON error
-    // page (e.g. a plain "Internal Server Error"), show that body instead of a
-    // cryptic "Unexpected token" JSON error.
     const raw = await res.text();
     let data;
     try { data = JSON.parse(raw); }

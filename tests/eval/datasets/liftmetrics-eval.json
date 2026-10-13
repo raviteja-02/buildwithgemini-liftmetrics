@@ -83,6 +83,69 @@
           ]
         }
       }
+    },
+    {
+      "eval_case_id": "budget_diet_plan_veg",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "I need a budget-friendly meal plan for muscle building. My daily budget is 150 rupees (₹150 INR) and I am a pure vegetarian. What should I eat to get enough protein?"
+          }
+        ]
+      },
+      "reference": {
+        "response": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "For a ₹150/day pure vegetarian muscle-building diet, focus on high protein-to-cost staples: Soya Chunks (₹0.29/g protein), Roasted Chana Sattu (Desi Whey), curd/dahi, and paneer. This delivers 100g+ protein across 5 meals within your ₹150 budget."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "eval_case_id": "barbell_plate_loading_140kg",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "How do I load a 140 kg barbell for deadlifts on a standard 20kg Olympic bar?"
+          }
+        ]
+      },
+      "reference": {
+        "response": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "For 140 kg total on a 20 kg Olympic barbell, load 60 kg per side: two 25 kg plates and one 10 kg plate on each sleeve. Always secure with Olympic collars."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "eval_case_id": "lifter_rank_stats",
+      "prompt": {
+        "role": "user",
+        "parts": [
+          {
+            "text": "What is my lifter rank and strength ratio if I weigh 70 kg and my lifts are Deadlift 180 kg, Squat 140 kg, and Bench Press 100 kg?"
+          }
+        ]
+      },
+      "reference": {
+        "response": {
+          "role": "model",
+          "parts": [
+            {
+              "text": "With a 70 kg bodyweight and 420 kg total (180kg deadlift + 140kg squat + 100kg bench), your strength-to-weight ratio is 6.0x BW. You achieve Level 6: Diamond Titan status with badges like Century Squatter and 2x BW Deadlift Club."
+            }
+          ]
+        }
+      }
     }
   ]
 }

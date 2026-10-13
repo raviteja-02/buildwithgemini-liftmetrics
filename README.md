@@ -24,11 +24,26 @@ Based strictly on the codebase in `app/` and configuration in `agents-cli-manife
   - `record_personal_record(exercise_name, weight_lbs, reps, notes)`: Stores explicit personal records.
   - `log_workout_session(exercise_name, sets, reps, weight_lbs, notes)`: Atomically computes total volume load, logs the workout session, checks against current PRs, and updates `personal_records` when a new record is achieved.
 
-### 2. 🧮 Strength & Conditioning Math
-- **Wired Function Tool**:
-  - `calculate_one_rep_max(weight_lbs, reps)`: Computes estimated 1-Rep Max using consensus averaging between Epley (`w * (1 + r / 30)`) and Brzycki (`w * 36 / (37 - r)`) equations, derives percentage training zones (95% down to 65%), and estimates rep maximums (3RM, 5RM, 8RM, 10RM).
+### 2. 🧮 Strength & Conditioning Math & Dual-Unit System
+- **Wired Function Tools**:
+  - `calculate_one_rep_max(weight, reps, unit)`: Primary metric system defaults to Kilograms (`kg`) with imperial (`lbs`) backward compatibility. Computes estimated 1RM using consensus averaging between Epley (`w * (1 + r / 30)`) and Brzycki (`w * 36 / (37 - r)`) equations, derives percentage training zones (95% down to 65%), and estimates rep maximums (3RM, 5RM, 8RM, 10RM).
+  - `calculate_plate_breakdown(target_weight, bar_weight, unit)`: Olympic barbell sleeve math for metric `[25, 20, 15, 10, 5, 2.5, 1.25] kg` plates or imperial `[45, 35, 25, 10, 5, 2.5] lb` plates. Generates exact per-sleeve loads, collar requirements, and ASCII barbell diagrams.
+  - `calculate_lifter_rank_and_stats(bodyweight, deadlift, squat, bench, overhead_press, unit)`: Gamified RPG strength progression featuring 7 rank tiers (Iron Novice, Bronze Lifter, Silver Athlete, Gold Warrior, Platinum Beast, Diamond Titan, Desi Baahubali / Iron God), DOTS strength ratio, XP progress, and unlocked gym badges (*Century Squatter*, *2x BW Deadlift Club*, *Bench Maharaja*, *Desi Strength Pioneer*).
 
-### 3. 🎨 Multimodal Media Generation & Google Cloud Storage
+### 3. 🍛 Indian & Global Budget Nutrition Engine (`app/diet_service.py`)
+- **Wired Function Tool**:
+  - `generate_budget_diet_plan(goal, daily_budget_inr, diet_type, bodyweight_kg, target_calories, currency)`
+- **Core Architecture & Coverage**:
+  - **5 Training Goals**: Strength & Powerlifting, Body Recomposition, Clean Hypertrophy Bulking, Fat Loss / Cutting, and High-Carb Endurance.
+  - **4 Dietary Lifestyles**: Pure Vegetarian (no meat, no eggs; paneer, soya chunks, sattu, curd, dal), Eggetarian (vegetarian + eggs), Non-Vegetarian (chicken breast, fish, eggs, dairy), and Vegan (100% plant-based).
+  - **3 Budget Tiers in INR & USD**:
+    - *Hostel / Student Budget*: ₹100–₹150 / day (~$1.20–$1.80) — High-ROI protein staples.
+    - *Working Professional*: ₹160–₹350 / day (~$1.90–$4.10) — Balanced whole foods and clean dairy.
+    - *Elite / Premium Athlete*: ₹360+ / day (~$4.20+) — Whey isolate, salmon/chicken, and premium nuts.
+  - **Protein Cost-Efficiency Rankings**: Automatically calculates cost-per-gram-of-protein to maximize nutrition per rupee spent (e.g., Soya Chunks @ ₹0.29/g protein vs. Chana Sattu @ ₹0.40/g protein vs. Eggs @ ₹1.16/g protein).
+  - **Mandatory Interview Protocol**: The agent proactively prompts users for their daily budget and dietary preferences before generating personalized meal plans.
+
+### 4. 🎨 Multimodal Media Generation & Google Cloud Storage
 - **Public Storage Bucket**: `gs://liftmetrics-media-fde3effbf431` configured with public object viewing permissions.
 - **Image Generation**:
   - **Model**: `gemini-3.1-flash-lite-image` in `global` region.
@@ -37,39 +52,39 @@ Based strictly on the codebase in `app/` and configuration in `agents-cli-manife
   - **Model**: `gemini-omni-flash-preview` in `global` region via the Vertex AI Interactions API.
   - **Tool**: `generate_exercise_motion_video(exercise_name, focus_cue)` renders a short coaching video clip demonstrating movement cadence, bar path, and joint angles, saves the MP4 into ADK session artifacts, and uploads to Cloud Storage.
 
-### 4. 📈 Visual Progression Charts & Volume Analytics
+### 5. 📈 Visual Progression Charts & Volume Analytics
 - **Tool**: `generate_progress_chart(exercise_name, metric)`
 - Dynamically renders high-resolution dark-themed progression charts combining:
   - Dual-axis visualizations: estimated 1RM progression lines and volume load bar distributions over historical workout logs.
   - Generates PNG charts with Matplotlib, saves to ADK session artifacts, and uploads to public Google Cloud Storage (`gs://liftmetrics-media-fde3effbf431/charts/`).
 
-### 5. 🔬 Evidence-Based Sports Science Knowledge Grounding
+### 6. 🔬 Evidence-Based Sports Science Knowledge Grounding
 - **Tool**: `consult_training_science(query)`
 - Grounds workout recommendations, fatigue management, and periodization into peer-reviewed sports science:
   - Hypertrophy volume landmarks: Maintenance Volume (MV), Minimum Effective Volume (MEV), Maximum Adaptive Volume (MAV), and Maximum Recoverable Volume (MRV).
   - Scientific rest interval guidelines: 2–3+ minutes for heavy compound lifts (Squat, Bench, Deadlift) and 60–90 seconds for metabolic isolation movements.
   - Proactive RPE (Rate of Perceived Exertion) and RIR (Reps in Reserve) intensity scaling.
 
-### 6. 🃏 Rich A2UI Interface & Web Frontend
+### 7. 🃏 Rich A2UI Interface & Addictive Web Frontend
 - Configured with A2UI v0.8 Basic Catalog schema manager (`a2ui.basic_catalog.provider.BasicCatalog`, `a2ui.schema.manager.A2uiSchemaManager`) and `after_model_callback=a2ui_callback`.
-- Converts agent responses into interactive visual components:
-  - **Cards & Badges**: Cleanly formatted training plans and exercise summaries.
-  - **Rows & Columns**: Structured percentage tables and set/rep workout splits.
-  - **Images**: Embedded visual diagrams directly rendered inside cards.
-- **Interactive Web Features**:
+- Converts agent responses into interactive visual components: Cards, Badges, Tables, Rows, Columns, and embedded images.
+- **Gamified & Addictive UI Controls**:
+  - **Interactive Barbell Plate Calculator Modal**: Visual sleeve loading calculator with live Olympic plate diagrams and direct coach query shortcut.
+  - **Dual-Unit Metric Switcher (`[🇮🇳 KG / 🇺🇸 LBS]`)**: Instant one-click toggle adapting all calculator defaults, plate sets, and prompt chips.
+  - **Streak & Rank Header Badges**: Visual display of active consistency streak and lifter RPG status (`🔥 14-Day Streak | 👑 Diamond Lifter`).
+  - **PR Fanfare & Confetti Triggers**: Real-time canvas confetti explosions and synthesized Web Audio brass victory chords whenever a personal record or Baahubali milestone is logged.
   - **In-Header Rest Interval Timer**: Web Audio API countdown timer with 60s, 90s, and 3-minute presets, pause/resume, and audio beep alerts.
-  - **Quick Prompt Chips**: Instant 1RM calculation, Deadlift progression plotting, Squats session logging, RDL form guides, and hypertrophy volume consultations.
   - **Workout Log Exporter**: One-click download of the complete training session history as a Markdown file.
 
-### 7. 🧠 Cross-Session Long-Term Memory (Memory Bank)
+### 8. 🧠 Cross-Session Long-Term Memory (Memory Bank)
 - Configured with `PreloadMemoryTool()` in `root_agent.tools` and `after_agent_callback=generate_memories_callback`.
 - Connects to Vertex AI Agent Engine Memory Bank to retain user preferences, injury history, and training goals across separate user sessions.
 
-### 8. 🐍 Sandboxed Code Execution
+### 9. 🐍 Sandboxed Code Execution
 - Integrated `AgentEngineSandboxCodeExecutor` backed by Vertex AI Agent Engine.
 - Safely executes Python code in an isolated cloud sandbox for complex volume equations, progression periodization, or custom analytics.
 
-### 9. 🌐 External Nutrition & Anatomy APIs
+### 10. 🌐 External Nutrition & Anatomy APIs
 - **Wired Function Tools**:
   - `fetch_nutrition_facts(food_query)`: Queries the Open Food Facts API (with USDA reference fallback) to fetch calories, protein, carbohydrates, and fats per 100g.
   - `lookup_external_muscle_info(muscle_name)`: Queries the WGER Workout Manager REST API for scientific anatomical muscle details and primary/secondary target groups.
@@ -90,7 +105,8 @@ The following features from the initial concept brief are planned for future rel
 liftmetrics/
 ├── app/
 │   ├── agent.py               # Root ADK agent, system instructions, and tool bindings
-│   ├── workout_service.py     # 1RM math calculations, Firestore logging, and Matplotlib charts
+│   ├── diet_service.py        # Indian & global budget nutrition engine and cost-per-gram protein rankings
+│   ├── workout_service.py     # 1RM math, plate calculator, lifter RPG ranks, Firestore logging, and Matplotlib charts
 │   ├── media_service.py       # Gemini 3.1 image generation and Omni video generation
 │   ├── external_service.py    # Open Food Facts and WGER external API clients
 │   ├── a2ui_utils.py          # A2UI response formatting callback and schema helpers
@@ -100,11 +116,15 @@ liftmetrics/
 │   ├── main.py                # FastAPI proxy communicating over the A2A protocol
 │   ├── requirements.txt       # Frontend dependencies (a2a-sdk, fastapi, uvicorn)
 │   └── static/
-│       └── index.html         # Web chat UI, rest interval audio timer, session exporter, and A2UI renderer
+│       └── index.html         # Web chat UI, plate modal, unit switcher, confetti/fanfare, timer, and A2UI renderer
 ├── tests/
-│   ├── unit/                  # Unit test suite for workout math, media, and chart services
+│   ├── unit/                  # Unit test suite (18 tests for diet, workout math, media, charts)
+│   │   ├── test_diet_service.py # Tests for budget diet plans, USD conversion, and protein cost rankings
+│   │   ├── test_liftmetrics.py  # Tests for 1RM, plate math, RPG ranks, charts, and science manual
+│   │   ├── test_media_service.py# Tests for Gemini image generation and Cloud Storage upload
+│   │   └── test_external_service.py # Tests for Open Food Facts & WGER APIs
 │   └── eval/                  # Agent evaluation suite (datasets, LLM judge, eval configs)
-│       ├── datasets/          # Domain-specific eval cases (1RM, logging, form guides, volume)
+│       ├── datasets/          # 7 domain-specific eval cases (1RM, logging, form guides, volume, budget diet, plate math, RPG rank)
 │       ├── eval_config.yaml   # Configured metrics (MULTI_TURN_TASK_SUCCESS, turn count)
 │       └── response_quality.py # In-process judge metric evaluator
 ├── training_science_guide.txt # Evidence-based strength and hypertrophy science knowledge base
